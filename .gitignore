@@ -31,6 +31,9 @@ npm-debug.log
 /obj/Debug
 /*.bat
 
+# Arquivos ocultos do macOS (AppleDouble)
+._*
+
 # directories created by docker-compose.yml
 mongo-data/
 letsencrypt/
