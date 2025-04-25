@@ -16,3 +16,6 @@ static/bower_components/
 /iisnode
 coverage/
 npm-debug.log
+
+# Evita erro de xattr do macOS
+._*

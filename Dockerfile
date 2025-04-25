@@ -10,14 +10,12 @@ RUN apk add --no-cache git
 # Clona o repositório diretamente do GitHub
 RUN git clone https://github.com/thiagomsoares/nsmulti.git .
 
-# Instala dependências, incluindo dotenv
-RUN npm install dotenv --save && \
-    npm install --cache /tmp/empty-cache && \
+# Instala dependências, incluindo dotenv, de forma tolerante a dependências opcionais
+RUN npm install --cache /tmp/empty-cache && \
+    npm install dotenv --save && \
     npm run postinstall && \
     npm run env && \
     rm -rf /tmp/*
-    # mkdir /tmp/public && \
-    # chown node:node /tmp/public
 
 USER node
 EXPOSE 1337
