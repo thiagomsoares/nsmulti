@@ -22,7 +22,5 @@
 // the Dexcom SGV data.
 'use strict';
 
-require('./lib/server/server');
 require('dotenv').config();
-require('./lib/multi-patient')(app, env, ctx);
-
+require('./lib/server/server');
