@@ -1,0 +1,119 @@
+# Análise Consolidada do Projeto Nightscout Multi-Paciente
+
+## Visão Geral
+
+Este documento consolida a análise do código-fonte do Nightscout para implementação da funcionalidade multi-paciente. A análise abrange coleções MongoDB, mecanismos de autenticação, endpoints da API e uma matriz de riscos para o projeto.
+
+## Estrutura do Documento
+
+1. [Coleções MongoDB](#coleções-mongodb)
+2. [Autenticação e Middleware](#autenticação-e-middleware)
+3. [Endpoints da API](#endpoints-da-api)
+4. [Matriz de Riscos](#matriz-de-riscos)
+5. [Próximos Passos](#próximos-passos)
+
+## Coleções MongoDB
+
+### Coleções Existentes
+
+Foram identificadas as seguintes coleções que precisarão ser modificadas para incluir o campo `patientId`:
+
+1. **entries** - Leituras de CGM (Continuous Glucose Monitoring)
+2. **treatments** - Tratamentos (insulina, carboidratos, etc.)
+3. **devicestatus** - Status dos dispositivos conectados
+4. **profile** - Perfis de configuração do usuário
+5. **food** - Banco de dados de alimentos
+6. **activity** - Registro de atividades
+7. **settings** - Configurações do sistema
+8. **auth_roles** - Papéis de autenticação
+9. **auth_subjects** - Sujeitos de autenticação
+
+### Nova Coleção
+
+Será necessário criar uma nova coleção:
+
+**patients** - Informações dos pacientes
+- Campos: `_id`, `name`, `phone`, `token`, `createdAt`, `tokenExpires`, `settings`
+- Índices: `{ token: 1 }`, `{ phone: 1 }`, `{ name: 1 }`
+
+## Autenticação e Middleware
+
+### Mecanismos Atuais
+
+1. **API_SECRET** - Chave compartilhada para autenticação
+2. **hashauth** - Autenticação no lado do cliente
+3. **Socket Authentication** - Autenticação para WebSockets
+4. **Role-based Authorization** - Sistema de papéis para controle de acesso
+
+### Modificações Necessárias
+
+1. **Middleware de Autenticação**
+   - Criar middleware `verifyPatient` para validar tokens JWT
+   - Criar middleware `verifyAdmin` para validar API_SECRET do administrador
+   - Injetar `patientId` no objeto de requisição
+
+2. **Pontos de Integração**
+   - `lib/server/app.js`: Adicionar middleware nas rotas
+   - `lib/server/websocket.js`: Modificar evento `authorize`
+   - `lib/api3/security.js`: Integrar com novo sistema de autenticação
+
+## Endpoints da API
+
+### Estrutura Atual
+
+O Nightscout possui três versões de API:
+1. **API v1** - API original
+2. **API v2** - Extensão da API v1
+3. **API v3** - API mais recente com estrutura genérica
+
+### Novos Endpoints
+
+Será necessário criar os seguintes endpoints:
+
+1. **POST /api/v1/patients** - Criar novo paciente
+2. **GET /api/v1/patients/:id** - Obter detalhes do paciente
+3. **PATCH /api/v1/patients/:id** - Atualizar informações do paciente
+4. **DELETE /api/v1/patients/:id** - Desativar paciente
+
+### Modificações em Endpoints Existentes
+
+Todos os endpoints existentes precisarão ser modificados para:
+1. Verificar token do paciente
+2. Adicionar filtro `{ patientId: req.patientId }` a todas as consultas
+3. Verificar propriedade dos documentos
+
+## Matriz de Riscos
+
+### Riscos Técnicos Principais
+
+1. **Vazamento de dados entre pacientes** - Mitigação: testes rigorosos de isolamento
+2. **Degradação de performance** - Mitigação: índices otimizados, monitoramento
+3. **Falha na migração de dados** - Mitigação: script com rollback, testes em cópia
+
+### Riscos de Negócio Principais
+
+1. **Resistência dos usuários** - Mitigação: comunicação clara, documentação
+2. **Complexidade de administração** - Mitigação: interface intuitiva, documentação
+3. **Aumento de custos** - Mitigação: otimização de consultas, monitoramento
+
+## Próximos Passos
+
+1. **Implementar Modelo de Pacientes**
+   - Criar schema da coleção patients
+   - Implementar validação de dados
+
+2. **Implementar Autenticação**
+   - Desenvolver middleware de autenticação
+   - Implementar geração e validação de tokens JWT
+
+3. **Implementar Endpoints de Pacientes**
+   - Criar endpoints para gerenciamento de pacientes
+   - Implementar validação e autorização
+
+4. **Refatorar Endpoints Existentes**
+   - Modificar endpoints para filtrar por patientId
+   - Garantir compatibilidade com clientes existentes
+
+5. **Implementar Migração de Dados**
+   - Desenvolver script para adicionar patientId a dados existentes
+   - Criar índices para otimizar consultas

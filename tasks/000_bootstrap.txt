@@ -1,0 +1,112 @@
+# Nightscout Multi-Paciente: Instruções de Bootstrap
+
+Este documento contém as instruções para configurar o ambiente de desenvolvimento do projeto Nightscout Multi-Paciente.
+
+## Pré-requisitos
+
+- Node.js (v14+)
+- MongoDB (v6.0+)
+- Git
+
+## Passos de Configuração
+
+### 1. Clonar o Repositório
+
+```bash
+git clone https://github.com/nightscout/cgm-remote-monitor.git nightscout-multi
+cd nightscout-multi
+```
+
+### 2. Configurar Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+
+```
+ADMIN_API_SECRET=a7d8e9f0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6
+MONGODB_URI=mongodb://localhost:27017/nightscout-multi
+NODE_ENV=development
+PORT=3000
+API_SECRET=nightscout-multi-api-secret
+DISPLAY_UNITS=mg/dl
+ENABLE_MULTI_PATIENT=true
+```
+
+Notas importantes:
+- O `ADMIN_API_SECRET` deve ter pelo menos 32 caracteres
+- Certifique-se de usar um valor único e seguro em ambiente de produção
+- O `API_SECRET` é usado para compatibilidade com clientes existentes
+
+### 3. Instalar Dependências
+
+```bash
+npm install
+```
+
+### 4. Configurar MongoDB
+
+Certifique-se de que o MongoDB está instalado e em execução:
+
+```bash
+# Instalar MongoDB (Ubuntu)
+sudo apt-get install -y gnupg curl
+curl -fsSL https://pgp.mongodb.com/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+
+# Iniciar MongoDB
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+### 5. Verificar Conexão com MongoDB
+
+```bash
+# Testar conexão
+node -e "const { MongoClient } = require('mongodb'); async function testConnection() { try { const client = new MongoClient('mongodb://localhost:27017/'); await client.connect(); console.log('MongoDB connection successful'); await client.close(); } catch (err) { console.error('MongoDB connection failed:', err); } } testConnection();"
+```
+
+### 6. Procedimento de Rollback
+
+Em caso de problemas durante a implementação, siga estes passos para reverter as alterações:
+
+1. **Rollback de Código**:
+   ```bash
+   git reset --hard <commit_anterior>
+   ```
+
+2. **Rollback de Banco de Dados**:
+   ```bash
+   # Restaurar de backup (se disponível)
+   mongorestore --uri="mongodb://localhost:27017" backup/
+   
+   # Ou limpar completamente (ambiente de desenvolvimento)
+   mongo --eval "db.dropDatabase()" nightscout-multi
+   ```
+
+3. **Rollback de Configuração**:
+   ```bash
+   # Restaurar .env original
+   cp .env.backup .env
+   ```
+
+### 7. Decisão sobre Formato de Token
+
+Após análise, decidimos utilizar **JWT RS256** para autenticação de pacientes devido a:
+
+- Verificação sem consulta ao banco de dados (importante para alta escala)
+- Capacidade de armazenar informações úteis no payload
+- Suporte amplo em bibliotecas cliente
+- Facilidade de implementação com bibliotecas existentes
+
+Para implementar:
+```bash
+# Gerar chaves RSA para assinatura JWT
+mkdir -p keys
+openssl genrsa -out keys/private.key 2048
+openssl rsa -in keys/private.key -pubout -out keys/public.key
+```
+
+## Próximos Passos
+
+Após concluir a configuração do ambiente, prossiga para a Task 002: Codebase Analysis and Mapping.
