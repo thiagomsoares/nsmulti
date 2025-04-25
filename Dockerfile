@@ -3,19 +3,21 @@ FROM node:16.16.0-alpine
 LABEL maintainer="Nightscout Contributors"
 
 WORKDIR /opt/app
-ADD . /opt/app
 
-# TODO: We should be able to do `RUN npm install --only=production`.
-# For this to work, we need to copy only package.json and things needed for `npm`'s to succeed.
-# TODO: Do we need to re-add `npm audit fix`? Or should that be part of a development process/stage?
-RUN npm install --cache /tmp/empty-cache && \
-  npm run postinstall && \
-  npm run env && \
-  rm -rf /tmp/*
-  # TODO: These should be added in the future to correctly cache express-minify content to disk
-  # Currently, doing this breaks the browser cache.
-  # mkdir /tmp/public && \
-  # chown node:node /tmp/public
+# Instala git para clonar o repositório
+RUN apk add --no-cache git
+
+# Clona o repositório diretamente do GitHub
+RUN git clone https://github.com/thiagomsoares/nsmulti.git .
+
+# Instala dependências, incluindo dotenv
+RUN npm install dotenv --save && \
+    npm install --cache /tmp/empty-cache && \
+    npm run postinstall && \
+    npm run env && \
+    rm -rf /tmp/*
+    # mkdir /tmp/public && \
+    # chown node:node /tmp/public
 
 USER node
 EXPOSE 1337
