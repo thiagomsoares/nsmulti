@@ -23,4 +23,3 @@
 'use strict';
 
 require('./lib/server/server');
-require('./lib/multi-patient');
